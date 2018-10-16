@@ -178,4 +178,18 @@ static inline void* dyn_arr_copy(const void* ptr)
     return new_ptr;
 }
 
+/*
+ * Remove the element at index `pos` from the array, shifting other elements
+ * to fill the now empty position. Require `0 <= pos < dyn_arr_size(ptr)`.
+ */
+static inline void* dyn_arr_delete(void* ptr, size_t pos)
+{
+    assert(pos < dyn_arr_size(ptr));
+    char* dest = (char*) ptr + pos * dyn_arr_elsize(ptr);
+    const char* src = dest + dyn_arr_elsize(ptr);
+    memmove(dest, src, dyn_arr_elsize(ptr) * (dyn_arr_size(ptr) - pos - 1));
+    *((size_t*)ptr - 3) = dyn_arr_size(ptr) - 1;
+    return ptr;
+}
+
 #endif
