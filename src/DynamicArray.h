@@ -192,4 +192,49 @@ static inline void* dyn_arr_delete(void* ptr, size_t pos)
     return ptr;
 }
 
+/*
+ * Insert `nelems` elements (assumed to be of the same type as the array
+ * was initialized with; we can't check this) from `src` into the array at
+ * index `pos`.
+ */
+static inline void* dyn_arr_insert_range(void* ptr, const void* src,
+                                         size_t nelems, size_t pos)
+{
+    assert(pos <= dyn_arr_size(ptr));
+    while (dyn_arr_capacity(ptr) < dyn_arr_size(ptr) + nelems)
+        ptr = dyn_arr_reserve(ptr, dyn_arr_size(ptr) * 3 / 2 + 1);
+
+    if (pos != dyn_arr_size(ptr)) {
+        // Move data out of the way.
+        const char* src = (char *)ptr + pos * dyn_arr_elsize(ptr);
+        char* dest = (char *)ptr + (pos + nelems) * dyn_arr_elsize(ptr);
+        memmove(dest, src, nelems * dyn_arr_elsize(ptr));
+    }
+    // Insert data.
+    char* dest = (char *)ptr + pos * dyn_arr_elsize(ptr);
+    memcpy(dest, src, nelems * dyn_arr_elsize(ptr));
+    *((size_t*)ptr - 3) = dyn_arr_size(ptr) + nelems;
+    return ptr;
+}
+
+/*
+ * Delete elements in the range of indices [start, end) (don't include the
+ * object at index `end`.
+ */
+static inline void* dyn_arr_delete_range(void* ptr, size_t start, size_t end)
+{
+    assert(start <= dyn_arr_size(ptr) && end <= dyn_arr_size(ptr));
+    assert(start <= end);
+    if (end - start == 0)
+        return ptr;
+    else if (end == dyn_arr_size(ptr))
+        return dyn_arr_resize(ptr, start);
+
+    char* dest = (char*)ptr + start * dyn_arr_elsize(ptr);
+    const char* src = (char*)ptr + end * dyn_arr_elsize(ptr);
+    memmove(dest, src, dyn_arr_elsize(ptr) * (dyn_arr_size(ptr) - end));
+    *((size_t*)ptr - 3) = dyn_arr_size(ptr) - (end - start);
+    return ptr;
+}
+
 #endif
