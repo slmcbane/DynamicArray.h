@@ -42,12 +42,33 @@ static inline void* _dyn_arr_init_impl(size_t type_size)
  * The parameter 'ty' should be the name of the type that this array will hold.
  */
 #define dyn_arr_init(ty) _dyn_arr_init_impl(sizeof(ty))
+/*
+ * Retrieve the size (number of stored items) of a dynamic array
+ */
 #define dyn_arr_size(ptr) (*((const size_t*)(ptr) - 3))
+/*
+ * Retrieve the capacity (number of elements that may be stored before
+ * reallocation) of a dynamic array.
+ */
 #define dyn_arr_capacity(ptr) (*((const size_t*)(ptr) - 2))
+/*
+ * Get the size of the stored element type (in bytes).
+ */
 #define dyn_arr_elsize(ptr) (*((const size_t*)(ptr) - 1))
+/*
+ * Get the one-past-the-end pointer from the dynamic array.
+ * Can be used for C++ style iteration.
+ */
 #define dyn_arr_end(ptr) ((const void*) ((const char*)(ptr) + \
                           dyn_arr_elsize(ptr)*dyn_arr_size(ptr)))
+/*
+ * Release memory allocated by dyn_arr_init
+ */
 #define dyn_arr_free(ptr) free((size_t*)ptr - 3)
+/*
+ * Trivial substitution so it's clear where a pointer is allocated
+ * using this facility.
+ */
 #define dyn_arr(ty) ty*
 
 /*
@@ -106,6 +127,10 @@ static inline void* dyn_arr_push(void* ptr, const void* val)
     return ptr;
 }
 
+/*
+ * Insert the element pointed at `val` before the element stored at index
+ * `pos` in the array. If `pos == dyn_arr_size(ptr)`, same as dyn_arr_push.
+ */
 static inline void* dyn_arr_insert(void* ptr, const void* val, size_t pos)
 {
     assert(pos <= dyn_arr_size(ptr));
@@ -119,6 +144,11 @@ static inline void* dyn_arr_insert(void* ptr, const void* val, size_t pos)
     return ptr;
 }
 
+/*
+ * Shrink the array to take up just enough space for the data it holds,
+ * don't keep extra space reserved. The implementation otherwise keeps other
+ * space around, assuming that the array may grow again.
+ */
 static inline void* dyn_arr_shrink(void* ptr)
 {
     if (!(dyn_arr_size(ptr) < dyn_arr_capacity(ptr)))
@@ -135,6 +165,11 @@ static inline void* dyn_arr_shrink(void* ptr)
     return ptr;
 }
 
+/*
+ * Return a new array initialized by dyn_arr_init and holding the same
+ * data as the input. The new array will not have the reserved space that the
+ * copied array has.
+ */
 static inline void* dyn_arr_copy(const void* ptr)
 {
     void* new_ptr = dyn_arr_resize(_dyn_arr_init_impl(dyn_arr_elsize(ptr)), 
