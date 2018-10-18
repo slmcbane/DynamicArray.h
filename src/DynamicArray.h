@@ -201,8 +201,12 @@ static inline void* dyn_arr_insert_range(void* ptr, const void* src,
                                          size_t nelems, size_t pos)
 {
     assert(pos <= dyn_arr_size(ptr));
-    while (dyn_arr_capacity(ptr) < dyn_arr_size(ptr) + nelems)
-        ptr = dyn_arr_reserve(ptr, dyn_arr_size(ptr) * 3 / 2 + 1);
+    if (dyn_arr_capacity(ptr) < dyn_arr_size(ptr) + nelems) {
+        size_t newcap = dyn_arr_capacity(ptr);
+        while (newcap < dyn_arr_size(ptr) + nelems)
+            newcap = newcap * 3 / 2 + 1;
+        ptr = dyn_arr_reserve(ptr, newcap);
+    }
 
     if (pos != dyn_arr_size(ptr)) {
         // Move data out of the way.

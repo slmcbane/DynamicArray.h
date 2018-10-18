@@ -3,29 +3,48 @@
 #include <assert.h>
 #include <stdio.h>
 
-const char* alphabet = "abcdefghijklmnopqrstuvwxyz";
-const char* ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
 int main()
 {
-    dyn_arr(char) x = dyn_arr_init(char);
-    for (int i = 0; i <= 26; ++i)
-        x = dyn_arr_push(x, &alphabet[i]);
-    assert(*(((char *) dyn_arr_end(x)) - 1) == '\0');
-    assert(*(((char *) dyn_arr_end(x)) - 2) == 'z');
-    assert(dyn_arr_size(x) == 27);
+    dyn_arr(int) x = dyn_arr_init(int);
+    dyn_arr(int) y = dyn_arr_init(int);
 
-    printf("x = \"%s\"; dyn_arr_capacity(x) = %ld\n", x, dyn_arr_capacity(x));
+    for (int i = 0; i < 5; ++i) x = dyn_arr_push(x, &i);
+    assert(dyn_arr_size(x) == 5);
+    for (int i = 0; i < 5; ++i) assert(x[i] == i);
+    
+    for (int i = 5; i < 10; ++i) y = dyn_arr_push(y, &i);
+    assert(dyn_arr_size(y) == 5);
+    for (int i = 0; i < 5; ++i) assert(y[i] == i+5);
 
-    for (int i = 0; i < 26; ++i)
-        x = dyn_arr_insert(x, &ALPHABET[i], dyn_arr_size(x) - 1);
-    assert(*(((char *) dyn_arr_end(x)) - 1) == '\0');
-    assert(*(((char *) dyn_arr_end(x)) - 2) == 'Z');
+    x = dyn_arr_insert_range(x, y, 5, 0);
+    assert(dyn_arr_size(x) == 10);
+    for (int i = 0; i < 5; ++i) assert(x[i] == i + 5 && x[i+5] == i);
 
-    printf("x = \"%s\"; dyn_arr_capacity(x) = %ld\n", x, dyn_arr_capacity(x));
+    x = dyn_arr_delete_range(x, 5, 10);
+    assert(dyn_arr_size(x) == 5);
+    for (int i = 0; i < 5; ++i) assert(x[i] == y[i]);
+
     x = dyn_arr_shrink(x);
-    printf("After shrinking, dyn_arr_capacity(x) = %ld\n", dyn_arr_capacity(x));
+    for (int i = 4; i >= 0; --i) x = dyn_arr_insert(x, &i, 0);
+    assert(dyn_arr_size(x) == 10);
+    for (int i = 0; i < 5; ++i) assert(x[i] == i);
+
+    x = dyn_arr_delete(x, 5);
+    assert(x[5] == 6);
+    int tmp = 5;
+    x = dyn_arr_insert(x, &tmp, 5);
+    assert(x[5] == 5);
+
+    x = dyn_arr_shrink(dyn_arr_resize(x, 0));
+    x = dyn_arr_insert_range(x, y, dyn_arr_size(y), dyn_arr_size(x));
+    for (unsigned i = 0; i < dyn_arr_size(y); ++i) assert(x[i] == y[i]);
+    x = dyn_arr_insert_range(x, y, dyn_arr_size(y), dyn_arr_size(x));
+    for (unsigned i = 0; i < dyn_arr_size(y); ++i) assert(x[i+5] == y[i]);
+    x = dyn_arr_insert_range(x, y, 5, 5);
+    for (unsigned i = 0; i < dyn_arr_size(y); ++i) assert(x[i+5] == y[i] && x[i+10] == y[i]);
+    
     dyn_arr_free(x);
+    dyn_arr_free(y);
 
     return 0;
 }
